@@ -29,7 +29,8 @@ public class GameManager : NetworkBehaviour
     private PlayerType localPlayerType;
     private NetworkVariable<PlayerType> currentPlayablePlayerType = new NetworkVariable<PlayerType>();
 
-
+    private PlayerType[,] playerTypeArray;
+    
     private void Awake()
     {
         if (Instance != null)
@@ -38,6 +39,8 @@ public class GameManager : NetworkBehaviour
         }
 
         Instance = this;
+
+        playerTypeArray = new PlayerType[3, 3];
     }
 
 
@@ -87,6 +90,14 @@ public class GameManager : NetworkBehaviour
         {
             return;
         }
+
+        // Already occupied
+        if (playerTypeArray[x,y] != PlayerType.None)
+        {
+            return;
+        }
+
+        playerTypeArray[x, y] = playerType;
 
         OnClickedOnGridPosition?.Invoke(this, new OnClickedOnGridPositionEventArgs
         {
