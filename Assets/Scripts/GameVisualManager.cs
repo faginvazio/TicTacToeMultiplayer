@@ -1,6 +1,7 @@
+using NUnit.Framework;
 using Unity.Netcode;
 using UnityEngine;
-
+using System.Collections.Generic;
 public class GameVisualManager : NetworkBehaviour
 {
     private const float GRID_SIZE = 3.1f;
@@ -9,10 +10,33 @@ public class GameVisualManager : NetworkBehaviour
     [SerializeField] private Transform circlePrefab;
     [SerializeField] private Transform lineCompletePrefab;
 
+    private List<GameObject> visualGameObjectList;
+
+
+    private void Awake()
+    {
+        visualGameObjectList = new List<GameObject>();
+    }
+
     private void Start()
     {
         GameManager.Instance.OnClickedOnGridPosition += GameManager_OnClickedOnGridPosition;
         GameManager.Instance.OnGameWin += GameManager_OnGameWin;
+        GameManager.Instance.OnRematch += GameManager_OnRematch;
+    }
+
+    private void GameManager_OnRematch(object sender, System.EventArgs e)
+    {
+        if (!NetworkManager.Singleton.IsServer)
+        {
+            return;
+        }
+
+        foreach (GameObject visualGameObject in visualGameObjectList)
+        {
+            Destroy(visualGameObject);
+        }
+        visualGameObjectList.Clear();
     }
 
     private void GameManager_OnGameWin(object sender, GameManager.OnGameWinEventArgs e)
@@ -41,6 +65,8 @@ public class GameVisualManager : NetworkBehaviour
         }
         Transform lineCompleteTransform = Instantiate(lineCompletePrefab, GetGridWorldPosition(e.line.centerGridPosition.x, e.line.centerGridPosition.y), Quaternion.Euler(0,0, eulerZ));
         lineCompleteTransform.GetComponent<NetworkObject>().Spawn(true);
+
+        visualGameObjectList.Add(lineCompleteTransform.gameObject);
     }
 
     private void GameManager_OnClickedOnGridPosition(object sender, GameManager.OnClickedOnGridPositionEventArgs e)
@@ -57,11 +83,15 @@ public class GameVisualManager : NetworkBehaviour
             case GameManager.PlayerType.Cross:
                 Transform spawnedCrossTransform = Instantiate(crossPrefab, GetGridWorldPosition(x, y), Quaternion.identity);
                 spawnedCrossTransform.GetComponent<NetworkObject>().Spawn(true);
+
+                visualGameObjectList.Add(spawnedCrossTransform.gameObject);
                 break;
 
             case GameManager.PlayerType.Circle:
                 Transform spawnedCircleTransform = Instantiate(circlePrefab, GetGridWorldPosition(x, y), Quaternion.identity);
                 spawnedCircleTransform.GetComponent<NetworkObject>().Spawn(true);
+
+                visualGameObjectList.Add(spawnedCircleTransform.gameObject);
                 break;
         }
     }
